@@ -1,0 +1,11 @@
+# Upload gambar artikel (jangan di-commit)
+uploads/*
+!uploads/.gitkeep
+
+# File PDF dokumen
+*.pdf
+
+# Cache & log
+*.log
+.DS_Store
+Thumbs.db
