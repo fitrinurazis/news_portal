@@ -1,9 +1,27 @@
 <?php
 include "config/koneksi.php";
-include "includes/header.php";
-include "includes/navbar.php";
 
 $id = (int) ($_GET['id'] ?? 0);
+
+// Simpan komentar SEBELUM output HTML (PRG pattern)
+if (isset($_POST['kirim'])) {
+    $nama        = htmlspecialchars(trim($_POST['nama']));
+    $email       = htmlspecialchars(trim($_POST['email']));
+    $isiKomentar = htmlspecialchars(trim($_POST['komentar']));
+
+    if ($nama && $email && $isiKomentar) {
+        mysqli_query($koneksi,
+            "INSERT INTO komentar (artikel_id, nama, email, komentar)
+             VALUES ('$id', '$nama', '$email', '$isiKomentar')"
+        );
+        // Redirect ke GET agar refresh tidak kirim ulang POST
+        header("Location: /newsportal/detail.php?id=$id&komentar=sukses");
+        exit;
+    }
+}
+
+include "includes/header.php";
+include "includes/navbar.php";
 
 // Query artikel
 $artikel = mysqli_fetch_assoc(mysqli_query($koneksi,
@@ -19,22 +37,6 @@ if (!$artikel) {
     echo '<div class="container mt-5"><div class="alert alert-danger">Artikel tidak ditemukan.</div></div>';
     include "includes/footer.php";
     exit;
-}
-
-// Simpan komentar
-$pesan_komentar = '';
-if (isset($_POST['kirim'])) {
-    $nama        = htmlspecialchars(trim($_POST['nama']));
-    $email       = htmlspecialchars(trim($_POST['email']));
-    $isiKomentar = htmlspecialchars(trim($_POST['komentar']));
-
-    if ($nama && $email && $isiKomentar) {
-        mysqli_query($koneksi,
-            "INSERT INTO komentar (artikel_id, nama, email, komentar)
-             VALUES ('$id', '$nama', '$email', '$isiKomentar')"
-        );
-        $pesan_komentar = 'success';
-    }
 }
 
 // Query komentar
@@ -135,7 +137,7 @@ $semua_kategori = mysqli_query($koneksi, "SELECT * FROM kategori ORDER BY nama_k
             <!-- Form Tulis Komentar -->
             <h4 class="fw-bold mb-3"><i class="bi bi-pencil-square me-2"></i>Tulis Komentar</h4>
 
-            <?php if ($pesan_komentar == 'success'): ?>
+            <?php if (isset($_GET['komentar']) && $_GET['komentar'] == 'sukses'): ?>
             <div class="alert alert-success alert-dismissible fade show">
                 <i class="bi bi-check-circle me-2"></i>Komentar berhasil dikirim! Terima kasih.
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
