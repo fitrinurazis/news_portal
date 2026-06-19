@@ -11,8 +11,9 @@ if ($current_dir === 'artikel') {
     $active_menu = 'kategori';
 } elseif ($current === 'user.php') {
     $active_menu = 'user';
+} elseif ($current === 'komentar.php') {
+    $active_menu = 'komentar';
 } else {
-    // index.php atau dashboard.php di folder admin
     $active_menu = 'dashboard';
 }
 ?>
@@ -83,6 +84,12 @@ if ($current_dir === 'artikel') {
                class="sidebar-link <?= $active_menu === 'kategori' ? 'active' : '' ?>">
                 <i class="bi bi-tags"></i>
                 <span>Kategori</span>
+            </a>
+
+            <a href="/newsportal/admin/komentar.php"
+               class="sidebar-link <?= $active_menu === 'komentar' ? 'active' : '' ?>">
+                <i class="bi bi-chat-dots"></i>
+                <span>Komentar</span>
             </a>
 
             <?php if ($_SESSION['role'] == 'ketua'): ?>
