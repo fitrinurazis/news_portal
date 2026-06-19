@@ -3,18 +3,16 @@ include "config/koneksi.php";
 
 $id = (int) ($_GET['id'] ?? 0);
 
-// Simpan komentar SEBELUM output HTML (PRG pattern)
+// PRG: simpan komentar sebelum output HTML
 if (isset($_POST['kirim'])) {
     $nama        = htmlspecialchars(trim($_POST['nama']));
     $email       = htmlspecialchars(trim($_POST['email']));
     $isiKomentar = htmlspecialchars(trim($_POST['komentar']));
-
     if ($nama && $email && $isiKomentar) {
         mysqli_query($koneksi,
             "INSERT INTO komentar (artikel_id, nama, email, komentar)
              VALUES ('$id', '$nama', '$email', '$isiKomentar')"
         );
-        // Redirect ke GET agar refresh tidak kirim ulang POST
         header("Location: /newsportal/detail.php?id=$id&komentar=sukses");
         exit;
     }
@@ -23,14 +21,12 @@ if (isset($_POST['kirim'])) {
 include "includes/header.php";
 include "includes/navbar.php";
 
-// Query artikel
 $artikel = mysqli_fetch_assoc(mysqli_query($koneksi,
     "SELECT artikel.*, kategori.nama_kategori, users.nama AS nama_penulis
      FROM artikel
      LEFT JOIN kategori ON artikel.kategori_id = kategori.id
      LEFT JOIN users ON artikel.user_id = users.id
-     WHERE artikel.id = '$id'
-     LIMIT 1"
+     WHERE artikel.id = '$id' LIMIT 1"
 ));
 
 if (!$artikel) {
@@ -39,248 +35,264 @@ if (!$artikel) {
     exit;
 }
 
-// Query komentar
-$komentar = mysqli_query($koneksi,
-    "SELECT * FROM komentar WHERE artikel_id='$id' ORDER BY id DESC"
+$read_time   = max(1, round(str_word_count(strip_tags($artikel['isi_berita'])) / 200));
+$komentar    = mysqli_query($koneksi, "SELECT * FROM komentar WHERE artikel_id='$id' ORDER BY id DESC");
+$jml_komen   = mysqli_num_rows($komentar);
+$terkait     = mysqli_query($koneksi,
+    "SELECT * FROM artikel WHERE kategori_id='{$artikel['kategori_id']}' AND id!='$id' ORDER BY id DESC LIMIT 3"
 );
-
-// Query artikel terkait (kategori sama)
-$artikel_terkait = mysqli_query($koneksi,
-    "SELECT * FROM artikel
-     WHERE kategori_id = '{$artikel['kategori_id']}' AND id != '$id'
-     ORDER BY id DESC
-     LIMIT 4"
-);
-
-// Query semua kategori untuk sidebar
-$semua_kategori = mysqli_query($koneksi, "SELECT * FROM kategori ORDER BY nama_kategori ASC");
+$semua_kat   = mysqli_query($koneksi, "SELECT * FROM kategori ORDER BY nama_kategori ASC");
+$art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM artikel ORDER BY id DESC LIMIT 5");
 ?>
 
-<div class="container mt-4 mb-5">
-    <div class="row">
+<!-- Reading Progress Bar -->
+<div id="read-progress"></div>
 
-        <!-- KONTEN UTAMA -->
-        <div class="col-md-8">
+<div class="container" style="padding-top: 32px; padding-bottom: 60px;">
+<div class="row g-4">
+
+    <!-- ====== KONTEN ARTIKEL ====== -->
+    <div class="col-lg-8">
+        <div style="background:var(--white); border-radius:var(--radius); padding:32px; box-shadow:var(--shadow-sm);">
 
             <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-3">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="/newsportal/index.php">Home</a></li>
-                    <li class="breadcrumb-item">
-                        <a href="/newsportal/kategori.php?id=<?= $artikel['kategori_id'] ?>">
-                            <?= htmlspecialchars($artikel['nama_kategori'] ?? 'Umum') ?>
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">
-                        <?= mb_strimwidth(htmlspecialchars($artikel['judul']), 0, 50, '...') ?>
-                    </li>
-                </ol>
-            </nav>
+            <ol class="breadcrumb">
+                <li><a href="/newsportal/index.php">Home</a></li>
+                <li class="sep"><i class="bi bi-chevron-right" style="font-size:10px;"></i></li>
+                <li>
+                    <a href="/newsportal/kategori.php?id=<?= $artikel['kategori_id'] ?>">
+                        <?= htmlspecialchars($artikel['nama_kategori'] ?? 'Umum') ?>
+                    </a>
+                </li>
+                <li class="sep"><i class="bi bi-chevron-right" style="font-size:10px;"></i></li>
+                <li class="current"><?= mb_strimwidth(htmlspecialchars($artikel['judul']), 0, 45, '...') ?></li>
+            </ol>
 
-            <!-- Header Artikel -->
-            <span class="badge bg-primary badge-kategori mb-3">
-                <?= htmlspecialchars($artikel['nama_kategori'] ?? 'Umum') ?>
-            </span>
-            <h1 class="fw-bold mb-3" style="line-height: 1.3;">
-                <?= htmlspecialchars($artikel['judul']) ?>
-            </h1>
-            <div class="d-flex align-items-center gap-3 text-muted mb-4">
-                <span><i class="bi bi-person-fill me-1"></i><?= htmlspecialchars($artikel['nama_penulis'] ?? 'Admin') ?></span>
-                <span><i class="bi bi-calendar3 me-1"></i><?= date('d F Y, H:i', strtotime($artikel['tanggal'])) ?></span>
-                <span><i class="bi bi-chat-dots me-1"></i><?= mysqli_num_rows($komentar) ?> Komentar</span>
+            <!-- Header -->
+            <div class="article-header">
+                <span class="cat-badge"><?= htmlspecialchars($artikel['nama_kategori'] ?? 'Umum') ?></span>
+                <h1 class="article-title"><?= htmlspecialchars($artikel['judul']) ?></h1>
+                <div class="article-meta">
+                    <span><i class="bi bi-person-fill"></i><?= htmlspecialchars($artikel['nama_penulis'] ?? 'Admin') ?></span>
+                    <span><i class="bi bi-calendar3"></i><?= date('d F Y', strtotime($artikel['tanggal'])) ?></span>
+                    <span><i class="bi bi-clock"></i><?= $read_time ?> menit baca</span>
+                    <span><i class="bi bi-chat-dots"></i><?= $jml_komen ?> komentar</span>
+                </div>
             </div>
 
             <!-- Thumbnail -->
             <?php if ($artikel['thumbnail']): ?>
-                <img src="/newsportal/uploads/<?= $artikel['thumbnail'] ?>"
-                     alt="<?= htmlspecialchars($artikel['judul']) ?>"
-                     class="artikel-thumbnail shadow-sm">
+            <img src="/newsportal/uploads/<?= $artikel['thumbnail'] ?>"
+                 alt="<?= htmlspecialchars($artikel['judul']) ?>"
+                 class="artikel-thumbnail">
             <?php endif; ?>
 
             <!-- Isi Artikel -->
-            <div class="artikel-content">
+            <div class="article-content">
                 <?= $artikel['isi_berita'] ?>
             </div>
 
-            <hr class="mt-5 mb-4">
+            <!-- Share Bar -->
+            <div class="share-bar">
+                <span class="share-label">Bagikan:</span>
+                <button class="share-btn" onclick="copyLink()">
+                    <i class="bi bi-link-45deg"></i> Salin Link
+                </button>
+                <a class="share-btn" href="https://wa.me/?text=<?= urlencode($artikel['judul'] . ' - http://localhost/newsportal/detail.php?id=' . $id) ?>" target="_blank">
+                    <i class="bi bi-whatsapp" style="color:#25d366;"></i> WhatsApp
+                </a>
+                <a class="share-btn" href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode('http://localhost/newsportal/detail.php?id=' . $id) ?>" target="_blank">
+                    <i class="bi bi-facebook" style="color:#1877f2;"></i> Facebook
+                </a>
+            </div>
 
             <!-- Artikel Terkait -->
-            <?php if (mysqli_num_rows($artikel_terkait) > 0): ?>
-            <h5 class="fw-bold mb-3"><i class="bi bi-newspaper me-2"></i>Artikel Terkait</h5>
-            <div class="row mb-4">
-                <?php while ($terkait = mysqli_fetch_assoc($artikel_terkait)): ?>
-                <div class="col-md-6 mb-3">
-                    <div class="card card-artikel shadow-sm">
-                        <?php if ($terkait['thumbnail']): ?>
-                            <img src="/newsportal/uploads/<?= $terkait['thumbnail'] ?>"
-                                 alt="<?= htmlspecialchars($terkait['judul']) ?>">
-                        <?php else: ?>
-                            <div class="no-image" style="height:120px;"><i class="bi bi-image"></i></div>
-                        <?php endif; ?>
-                        <div class="card-body">
-                            <h6 class="card-title">
-                                <a href="/newsportal/detail.php?id=<?= $terkait['id'] ?>">
-                                    <?= htmlspecialchars($terkait['judul']) ?>
-                                </a>
-                            </h6>
-                            <small class="text-muted"><?= date('d M Y', strtotime($terkait['tanggal'])) ?></small>
-                        </div>
-                    </div>
+            <?php if (mysqli_num_rows($terkait) > 0): ?>
+            <div style="margin-top:32px;">
+                <div class="section-header">
+                    <div class="section-title">Artikel Terkait</div>
                 </div>
-                <?php endwhile; ?>
+                <div class="row g-3">
+                    <?php while ($t = mysqli_fetch_assoc($terkait)): ?>
+                    <div class="col-md-4">
+                        <a href="/newsportal/detail.php?id=<?= $t['id'] ?>" style="display:block; height:100%;">
+                            <div class="news-card">
+                                <?php if ($t['thumbnail']): ?>
+                                    <img class="card-img" src="/newsportal/uploads/<?= $t['thumbnail'] ?>"
+                                         alt="<?= htmlspecialchars($t['judul']) ?>"
+                                         style="height:130px;">
+                                <?php else: ?>
+                                    <div class="card-img-placeholder" style="height:130px;"><i class="bi bi-image"></i></div>
+                                <?php endif; ?>
+                                <div class="card-body" style="padding:12px;">
+                                    <div class="card-title" style="font-size:13px;">
+                                        <?= htmlspecialchars($t['judul']) ?>
+                                    </div>
+                                    <div class="card-meta">
+                                        <span><i class="bi bi-clock"></i><?= date('d M Y', strtotime($t['tanggal'])) ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <?php endwhile; ?>
+                </div>
             </div>
-            <hr class="mb-4">
             <?php endif; ?>
+        </div>
 
-            <!-- ===== SISTEM KOMENTAR ===== -->
-
-            <!-- Form Tulis Komentar -->
-            <h4 class="fw-bold mb-3"><i class="bi bi-pencil-square me-2"></i>Tulis Komentar</h4>
+        <!-- ====== KOMENTAR ====== -->
+        <div class="comment-section" style="background:var(--white); border-radius:var(--radius); padding:32px; box-shadow:var(--shadow-sm); margin-top:24px;">
 
             <?php if (isset($_GET['komentar']) && $_GET['komentar'] == 'sukses'): ?>
-            <div class="alert alert-success alert-dismissible fade show">
-                <i class="bi bi-check-circle me-2"></i>Komentar berhasil dikirim! Terima kasih.
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <div style="background:#f0fdf4; border:1.5px solid #86efac; color:#166534; padding:14px 18px; border-radius:var(--radius-sm); margin-bottom:24px; display:flex; align-items:center; gap:10px;">
+                <i class="bi bi-check-circle-fill"></i>
+                Komentar berhasil dikirim! Terima kasih.
             </div>
             <?php endif; ?>
 
-            <div class="card shadow-sm border-0 mb-5">
-                <div class="card-body p-4">
-                    <form method="POST">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold">Nama <span class="text-danger">*</span></label>
-                                <input type="text" name="nama" class="form-control"
-                                       placeholder="Nama kamu" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-semibold">Email <span class="text-danger">*</span></label>
-                                <input type="email" name="email" class="form-control"
-                                       placeholder="Email kamu" required>
-                            </div>
+            <!-- Form Komentar -->
+            <h4 class="comment-title">
+                <i class="bi bi-pencil-square me-2" style="color:var(--red);"></i>Tulis Komentar
+            </h4>
+            <div class="comment-form-card" style="background:var(--light-gray); padding:24px; border-radius:var(--radius);">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label style="font-size:13px; font-weight:700; margin-bottom:6px; display:block;">Nama</label>
+                            <input type="text" name="nama" class="form-control" placeholder="Nama kamu" required>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Komentar <span class="text-danger">*</span></label>
+                        <div class="col-md-6">
+                            <label style="font-size:13px; font-weight:700; margin-bottom:6px; display:block;">Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="Email kamu" required>
+                        </div>
+                        <div class="col-12">
+                            <label style="font-size:13px; font-weight:700; margin-bottom:6px; display:block;">Komentar</label>
                             <textarea name="komentar" class="form-control" rows="4"
-                                      placeholder="Tulis komentar kamu di sini..." required></textarea>
+                                      placeholder="Tulis pendapatmu..." required></textarea>
                         </div>
-                        <button type="submit" name="kirim" class="btn btn-primary px-4">
-                            <i class="bi bi-send me-2"></i>Kirim Komentar
-                        </button>
-                    </form>
-                </div>
+                        <div class="col-12">
+                            <button type="submit" name="kirim" class="btn-primary-red">
+                                <i class="bi bi-send"></i> Kirim Komentar
+                            </button>
+                        </div>
+                    </div>
+                </form>
             </div>
 
             <!-- Daftar Komentar -->
-            <h5 class="fw-bold mb-3">
-                <i class="bi bi-chat-dots me-2"></i>Komentar Pembaca
-                <span class="badge bg-secondary ms-1"><?= mysqli_num_rows($komentar) ?></span>
+            <h5 class="comment-title" style="font-size:16px; margin-top:32px;">
+                <i class="bi bi-chat-dots me-2" style="color:var(--red);"></i>
+                Komentar Pembaca
+                <span style="background:var(--red); color:#fff; font-size:11px; font-weight:700; padding:2px 9px; border-radius:20px; margin-left:8px;">
+                    <?= $jml_komen ?>
+                </span>
             </h5>
 
             <?php
-            // Reset pointer karena num_rows sudah dipakai
             mysqli_data_seek($komentar, 0);
-            if (mysqli_num_rows($komentar) > 0):
+            if ($jml_komen > 0):
                 while ($k = mysqli_fetch_assoc($komentar)):
             ?>
-            <div class="card mb-3 shadow-sm border-0">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="bg-primary text-white rounded-circle d-flex align-items-center
-                                        justify-content-center fw-bold"
-                                 style="width:38px; height:38px; font-size:0.9rem;">
-                                <?= strtoupper(substr($k['nama'], 0, 1)) ?>
-                            </div>
-                            <div>
-                                <h6 class="mb-0 fw-bold"><?= htmlspecialchars($k['nama']) ?></h6>
-                                <small class="text-muted">
-                                    <?= date('d F Y, H:i', strtotime($k['tanggal'])) ?>
-                                </small>
-                            </div>
-                        </div>
+            <div class="comment-item">
+                <div class="comment-avatar">
+                    <?= strtoupper(substr($k['nama'], 0, 1)) ?>
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <div class="comment-name"><?= htmlspecialchars($k['nama']) ?></div>
+                    <div class="comment-date">
+                        <i class="bi bi-clock me-1"></i>
+                        <?= date('d F Y, H:i', strtotime($k['tanggal'])) ?>
                     </div>
-                    <p class="mt-3 mb-0 text-muted" style="padding-left: 50px;">
-                        <?= nl2br(htmlspecialchars($k['komentar'])) ?>
-                    </p>
+                    <div class="comment-text"><?= nl2br(htmlspecialchars($k['komentar'])) ?></div>
                 </div>
             </div>
             <?php
                 endwhile;
             else:
             ?>
-            <div class="text-center py-4 text-muted">
-                <i class="bi bi-chat-square" style="font-size: 2.5rem; opacity: 0.3;"></i>
-                <p class="mt-2 mb-0">Belum ada komentar. Jadilah yang pertama!</p>
+            <div style="text-align:center; padding:40px 0; color:var(--gray);">
+                <i class="bi bi-chat-square" style="font-size:2.5rem; opacity:.3; display:block; margin-bottom:12px;"></i>
+                Belum ada komentar. Jadilah yang pertama!
             </div>
             <?php endif; ?>
+        </div>
+    </div>
 
+    <!-- ====== SIDEBAR ====== -->
+    <div class="col-lg-4">
+
+        <!-- Tentang Portal -->
+        <div class="widget text-center" style="margin-bottom:20px;">
+            <div style="width:60px;height:60px;background:var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
+                <i class="bi bi-newspaper" style="color:#fff;font-size:24px;"></i>
+            </div>
+            <div style="font-size:17px; font-weight:800; color:var(--dark);">NEWS<span style="color:var(--red);">PORTAL</span></div>
+            <p style="font-size:13px; color:var(--gray); margin-top:8px; margin-bottom:0;">
+                Portal berita terpercaya — akurat, cepat, dan berimbang.
+            </p>
         </div>
 
-        <!-- SIDEBAR -->
-        <div class="col-md-4">
-            <!-- Profil Portal -->
-            <div class="sidebar-widget text-center">
-                <i class="bi bi-newspaper" style="font-size: 2.5rem; color: #0d6efd;"></i>
-                <h5 class="mt-2 mb-1">News Portal</h5>
-                <p class="text-muted small">Menyajikan berita terbaru, terpercaya, dan terkini untuk Anda.</p>
-            </div>
-
-            <!-- Kategori -->
-            <div class="sidebar-widget">
-                <h5><i class="bi bi-tags me-2"></i>Kategori</h5>
-                <ul class="list-unstyled mb-0">
-                    <?php while ($kat = mysqli_fetch_assoc($semua_kategori)): ?>
-                    <li class="mb-2">
-                        <a href="/newsportal/kategori.php?id=<?= $kat['id'] ?>"
-                           class="text-decoration-none d-flex justify-content-between align-items-center">
-                            <span>
-                                <i class="bi bi-chevron-right me-1 text-primary"></i>
-                                <?= htmlspecialchars($kat['nama_kategori']) ?>
-                            </span>
-                            <?php
-                            $jml = mysqli_fetch_assoc(mysqli_query($koneksi,
-                                "SELECT COUNT(*) AS total FROM artikel WHERE kategori_id='{$kat['id']}'"))['total'];
-                            ?>
-                            <span class="badge bg-light text-dark border"><?= $jml ?></span>
-                        </a>
-                    </li>
-                    <?php endwhile; ?>
-                </ul>
-            </div>
-
-            <!-- Artikel Populer (5 terbaru) -->
-            <div class="sidebar-widget">
-                <h5><i class="bi bi-fire me-2"></i>Artikel Terbaru</h5>
-                <?php
-                $populer = mysqli_query($koneksi,
-                    "SELECT id, judul, tanggal, thumbnail FROM artikel ORDER BY id DESC LIMIT 5");
-                while ($p = mysqli_fetch_assoc($populer)):
-                ?>
-                <div class="d-flex gap-2 mb-3">
+        <!-- Artikel Terbaru -->
+        <div class="widget">
+            <div class="widget-title"><i class="bi bi-fire"></i> Artikel Terbaru</div>
+            <?php while ($p = mysqli_fetch_assoc($art_populer)): ?>
+            <a href="/newsportal/detail.php?id=<?= $p['id'] ?>">
+                <div class="list-card">
                     <?php if ($p['thumbnail']): ?>
                         <img src="/newsportal/uploads/<?= $p['thumbnail'] ?>"
-                             width="60" height="50" style="object-fit:cover; border-radius:6px; flex-shrink:0;">
+                             alt="<?= htmlspecialchars($p['judul']) ?>">
                     <?php else: ?>
-                        <div style="width:60px; height:50px; background:#e9ecef; border-radius:6px;
-                                    display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                            <i class="bi bi-image text-muted"></i>
+                        <div style="width:75px;height:60px;background:var(--light-gray);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="bi bi-image" style="color:#cbd5e1;"></i>
                         </div>
                     <?php endif; ?>
                     <div>
-                        <a href="/newsportal/detail.php?id=<?= $p['id'] ?>"
-                           class="text-decoration-none text-dark small fw-semibold"
-                           style="line-height:1.3; display:block;">
-                            <?= mb_strimwidth(htmlspecialchars($p['judul']), 0, 55, '...') ?>
-                        </a>
-                        <small class="text-muted"><?= date('d M Y', strtotime($p['tanggal'])) ?></small>
+                        <div class="list-title"><?= htmlspecialchars($p['judul']) ?></div>
+                        <div class="list-meta"><i class="bi bi-clock me-1"></i><?= date('d M Y', strtotime($p['tanggal'])) ?></div>
                     </div>
                 </div>
-                <?php endwhile; ?>
-            </div>
+            </a>
+            <?php endwhile; ?>
         </div>
 
+        <!-- Kategori -->
+        <div class="widget">
+            <div class="widget-title"><i class="bi bi-tags"></i> Kategori</div>
+            <ul class="cat-list">
+                <?php while ($kat = mysqli_fetch_assoc($semua_kat)):
+                    $jml = mysqli_fetch_assoc(mysqli_query($koneksi,
+                        "SELECT COUNT(*) AS total FROM artikel WHERE kategori_id='{$kat['id']}'"))['total'];
+                ?>
+                <li>
+                    <a href="/newsportal/kategori.php?id=<?= $kat['id'] ?>">
+                        <span><?= htmlspecialchars($kat['nama_kategori']) ?></span>
+                        <span class="count"><?= $jml ?></span>
+                    </a>
+                </li>
+                <?php endwhile; ?>
+            </ul>
+        </div>
     </div>
+
+</div>
 </div>
 
 <?php include "includes/footer.php"; ?>
+
+<script>
+// Reading Progress Bar
+window.addEventListener('scroll', function () {
+    const doc  = document.documentElement;
+    const scrolled = doc.scrollTop;
+    const total    = doc.scrollHeight - doc.clientHeight;
+    document.getElementById('read-progress').style.width = (scrolled / total * 100) + '%';
+});
+
+// Copy link
+function copyLink() {
+    navigator.clipboard.writeText(window.location.href).then(function () {
+        alert('Link berhasil disalin!');
+    });
+}
+</script>
