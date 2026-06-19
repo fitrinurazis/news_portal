@@ -44,7 +44,7 @@ if (isset($_POST['update'])) {
 }
 ?>
 
-<div class="col-md-10 main-content">
+<div class="col-lg-10 main-content">
     <div class="top-bar d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold"><i class="bi bi-pencil me-2"></i>Edit Artikel</h5>
         <a href="/newsportal/admin/artikel/index.php" class="btn btn-sm btn-secondary">

@@ -12,7 +12,7 @@ include "sidebar.php";
 $data_user = mysqli_query($koneksi, "SELECT * FROM users ORDER BY id DESC");
 ?>
 
-<div class="col-md-10 main-content">
+<div class="col-lg-10 main-content">
     <div class="top-bar d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i>Kelola User</h5>
         <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahUser">

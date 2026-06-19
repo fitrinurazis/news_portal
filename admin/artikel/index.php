@@ -11,7 +11,7 @@ $data_artikel = mysqli_query($koneksi,
 );
 ?>
 
-<div class="col-md-10 main-content">
+<div class="col-lg-10 main-content">
     <div class="top-bar d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold"><i class="bi bi-newspaper me-2"></i>Kelola Artikel</h5>
         <a href="/newsportal/admin/artikel/tambah.php" class="btn btn-sm btn-primary">

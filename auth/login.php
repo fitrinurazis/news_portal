@@ -12,7 +12,7 @@ if (isset($_SESSION['role'])) {
 $error = "";
 
 if (isset($_POST['login'])) {
-    $email = $_POST['email'];
+    $email    = mysqli_real_escape_string($koneksi, trim($_POST['email']));
     $password = $_POST['password'];
 
     $query = mysqli_query($koneksi, "SELECT * FROM users WHERE email='$email'");

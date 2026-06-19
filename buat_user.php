@@ -1,30 +1,35 @@
 <?php
 include "config/koneksi.php";
 
-// User 1: Ketua
-$nama1 = "Ketua";
-$email1 = "ketua@gmail.com";
-$password1 = password_hash("12345", PASSWORD_DEFAULT);
-$role1 = "ketua";
-
-$query1 = mysqli_query($koneksi, "INSERT INTO users (nama, email, password, role) VALUES ('$nama1', '$email1', '$password1', '$role1')");
-
-if ($query1) {
-    echo "User ketua berhasil masuk database<br>";
-} else {
-    echo "Gagal: " . mysqli_error($koneksi) . "<br>";
+// Keamanan: hanya berjalan jika belum ada user
+$total = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM users"))['total'] ?? 0;
+if ($total > 0) {
+    die('<div style="font-family:sans-serif;padding:40px;color:#dc2626;">
+        <h3>⚠️ Akses Ditolak</h3>
+        <p>User sudah ada di database. File ini tidak bisa dijalankan ulang.</p>
+        <p><strong>Hapus file buat_user.php</strong> dari server untuk keamanan.</p>
+    </div>');
 }
 
-// User 2: Admin
-$nama2 = "Admin";
-$email2 = "admin@gmail.com";
-$password2 = password_hash("12345", PASSWORD_DEFAULT);
-$role2 = "admin";
+$users = [
+    ['Ketua', 'ketua@gmail.com', '12345', 'ketua'],
+    ['Admin', 'admin@gmail.com', '12345', 'admin'],
+];
 
-$query2 = mysqli_query($koneksi, "INSERT INTO users (nama, email, password, role) VALUES ('$nama2', '$email2', '$password2', '$role2')");
+echo '<div style="font-family:sans-serif;padding:40px;">';
+echo '<h3>Buat User Default</h3>';
 
-if ($query2) {
-    echo "User admin berhasil masuk database<br>";
-} else {
-    echo "Gagal: " . mysqli_error($koneksi) . "<br>";
+foreach ($users as [$nama, $email, $pass, $role]) {
+    $nama_esc  = mysqli_real_escape_string($koneksi, $nama);
+    $email_esc = mysqli_real_escape_string($koneksi, $email);
+    $password  = password_hash($pass, PASSWORD_DEFAULT);
+    $q = mysqli_query($koneksi,
+        "INSERT INTO users (nama, email, password, role) VALUES ('$nama_esc', '$email_esc', '$password', '$role')"
+    );
+    echo $q
+        ? "<p style='color:green;'>✅ User <strong>$email</strong> ($role) berhasil dibuat.</p>"
+        : "<p style='color:red;'>❌ Gagal: " . mysqli_error($koneksi) . "</p>";
 }
+
+echo '<hr><p style="color:#dc2626;"><strong>⚠️ Segera hapus file ini setelah selesai!</strong></p>';
+echo '</div>';

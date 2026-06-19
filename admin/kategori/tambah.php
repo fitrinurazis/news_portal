@@ -13,7 +13,7 @@ if (isset($_POST['simpan'])) {
 }
 ?>
 
-<div class="col-md-10 main-content">
+<div class="col-lg-10 main-content">
     <div class="top-bar d-flex justify-content-between align-items-center">
         <h5 class="mb-0 fw-bold"><i class="bi bi-plus-circle me-2"></i>Tambah Kategori</h5>
         <a href="/newsportal/admin/kategori/index.php" class="btn btn-sm btn-secondary">

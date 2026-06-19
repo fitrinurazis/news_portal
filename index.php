@@ -76,7 +76,7 @@ $kategori_list = mysqli_query($koneksi,
                     <div class="news-card" style="height:100%;">
                         <?php if ($s['thumbnail']): ?>
                             <img class="card-img" src="/newsportal/uploads/<?= $s['thumbnail'] ?>"
-                                 alt="<?= htmlspecialchars($s['judul']) ?>">
+                                 alt="<?= htmlspecialchars($s['judul']) ?>" loading="lazy">
                         <?php else: ?>
                             <div class="card-img-placeholder"><i class="bi bi-image"></i></div>
                         <?php endif; ?>
@@ -114,7 +114,7 @@ $kategori_list = mysqli_query($koneksi,
                 <div class="news-card">
                     <?php if ($art['thumbnail']): ?>
                         <img class="card-img" src="/newsportal/uploads/<?= $art['thumbnail'] ?>"
-                             alt="<?= htmlspecialchars($art['judul']) ?>">
+                             alt="<?= htmlspecialchars($art['judul']) ?>" loading="lazy">
                     <?php else: ?>
                         <div class="card-img-placeholder"><i class="bi bi-image"></i></div>
                     <?php endif; ?>
@@ -167,7 +167,7 @@ while ($kat = mysqli_fetch_assoc($kategori_list)):
                     <?php if ($first['thumbnail']): ?>
                         <img class="card-img" src="/newsportal/uploads/<?= $first['thumbnail'] ?>"
                              alt="<?= htmlspecialchars($first['judul']) ?>"
-                             style="height:240px;">
+                             style="height:240px;" loading="lazy">
                     <?php else: ?>
                         <div class="card-img-placeholder" style="height:240px;"><i class="bi bi-image"></i></div>
                     <?php endif; ?>
@@ -195,7 +195,7 @@ while ($kat = mysqli_fetch_assoc($kategori_list)):
                     <div class="small-card" style="height:100%;">
                         <?php if ($a['thumbnail']): ?>
                             <img class="small-img" src="/newsportal/uploads/<?= $a['thumbnail'] ?>"
-                                 alt="<?= htmlspecialchars($a['judul']) ?>">
+                                 alt="<?= htmlspecialchars($a['judul']) ?>" loading="lazy">
                         <?php else: ?>
                             <div class="small-img-placeholder"><i class="bi bi-image" style="color:#cbd5e1;"></i></div>
                         <?php endif; ?>

@@ -3,11 +3,11 @@ include "config/koneksi.php";
 
 $id = (int) ($_GET['id'] ?? 0);
 
-// PRG: simpan komentar sebelum output HTML
+// PRG: simpan komentar SEBELUM output HTML
 if (isset($_POST['kirim'])) {
-    $nama        = htmlspecialchars(trim($_POST['nama']));
-    $email       = htmlspecialchars(trim($_POST['email']));
-    $isiKomentar = htmlspecialchars(trim($_POST['komentar']));
+    $nama        = mysqli_real_escape_string($koneksi, trim($_POST['nama']));
+    $email       = mysqli_real_escape_string($koneksi, trim($_POST['email']));
+    $isiKomentar = mysqli_real_escape_string($koneksi, trim($_POST['komentar']));
     if ($nama && $email && $isiKomentar) {
         mysqli_query($koneksi,
             "INSERT INTO komentar (artikel_id, nama, email, komentar)
@@ -18,9 +18,7 @@ if (isset($_POST['kirim'])) {
     }
 }
 
-include "includes/header.php";
-include "includes/navbar.php";
-
+// Fetch artikel SEBELUM include header (agar bisa set OG meta tags)
 $artikel = mysqli_fetch_assoc(mysqli_query($koneksi,
     "SELECT artikel.*, kategori.nama_kategori, users.nama AS nama_penulis
      FROM artikel
@@ -29,8 +27,36 @@ $artikel = mysqli_fetch_assoc(mysqli_query($koneksi,
      WHERE artikel.id = '$id' LIMIT 1"
 ));
 
+// Cek kolom views sekali di sini
+$has_views = false;
+$qc = mysqli_query($koneksi, "SHOW COLUMNS FROM artikel LIKE 'views'");
+if ($qc && mysqli_num_rows($qc) > 0) $has_views = true;
+
+if ($artikel) {
+    // Tambah view counter (hanya jika kolom ada)
+    if ($has_views) {
+        mysqli_query($koneksi, "UPDATE artikel SET views = views + 1 WHERE id = '$id'");
+    }
+
+    // Set OG meta tags
+    $page_title     = htmlspecialchars($artikel['judul']) . ' — NewsPortal';
+    $og_title       = htmlspecialchars($artikel['judul']);
+    $og_description = htmlspecialchars(mb_strimwidth(strip_tags($artikel['isi_berita']), 0, 160, '...'));
+    $og_image       = $artikel['thumbnail'] ? 'http://localhost/newsportal/uploads/' . $artikel['thumbnail'] : '';
+    $og_url         = 'http://localhost/newsportal/detail.php?id=' . $id;
+}
+
+include "includes/header.php";
+include "includes/navbar.php";
+
+// Artikel tidak ditemukan
 if (!$artikel) {
-    echo '<div class="container mt-5"><div class="alert alert-danger">Artikel tidak ditemukan.</div></div>';
+    echo '<div class="container" style="padding:80px 16px; text-align:center;">
+        <i class="bi bi-exclamation-triangle" style="font-size:3rem; color:#fbbf24; display:block; margin-bottom:16px;"></i>
+        <h4 style="color:var(--dark);">Artikel tidak ditemukan</h4>
+        <p style="color:var(--gray);">Artikel yang kamu cari tidak tersedia atau sudah dihapus.</p>
+        <a href="/newsportal/index.php" class="btn-primary-red" style="margin-top:12px;">← Kembali ke Beranda</a>
+    </div>';
     include "includes/footer.php";
     exit;
 }
@@ -42,13 +68,15 @@ $terkait     = mysqli_query($koneksi,
     "SELECT * FROM artikel WHERE kategori_id='{$artikel['kategori_id']}' AND id!='$id' ORDER BY id DESC LIMIT 3"
 );
 $semua_kat   = mysqli_query($koneksi, "SELECT * FROM kategori ORDER BY nama_kategori ASC");
-$art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM artikel ORDER BY id DESC LIMIT 5");
+$art_populer = $has_views
+    ? mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal, views FROM artikel ORDER BY views DESC, id DESC LIMIT 5")
+    : mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM artikel ORDER BY id DESC LIMIT 5");
 ?>
 
 <!-- Reading Progress Bar -->
 <div id="read-progress"></div>
 
-<div class="container" style="padding-top: 32px; padding-bottom: 60px;">
+<div class="container" style="padding-top:32px; padding-bottom:60px;">
 <div class="row g-4">
 
     <!-- ====== KONTEN ARTIKEL ====== -->
@@ -77,6 +105,7 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
                     <span><i class="bi bi-calendar3"></i><?= date('d F Y', strtotime($artikel['tanggal'])) ?></span>
                     <span><i class="bi bi-clock"></i><?= $read_time ?> menit baca</span>
                     <span><i class="bi bi-chat-dots"></i><?= $jml_komen ?> komentar</span>
+                    <span><i class="bi bi-eye"></i><?= number_format(($artikel['views'] ?? 0) + 1) ?> views</span>
                 </div>
             </div>
 
@@ -98,10 +127,14 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
                 <button class="share-btn" onclick="copyLink()">
                     <i class="bi bi-link-45deg"></i> Salin Link
                 </button>
-                <a class="share-btn" href="https://wa.me/?text=<?= urlencode($artikel['judul'] . ' - http://localhost/newsportal/detail.php?id=' . $id) ?>" target="_blank">
+                <a class="share-btn"
+                   href="https://wa.me/?text=<?= urlencode($artikel['judul'] . ' - http://localhost/newsportal/detail.php?id=' . $id) ?>"
+                   target="_blank">
                     <i class="bi bi-whatsapp" style="color:#25d366;"></i> WhatsApp
                 </a>
-                <a class="share-btn" href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode('http://localhost/newsportal/detail.php?id=' . $id) ?>" target="_blank">
+                <a class="share-btn"
+                   href="https://www.facebook.com/sharer/sharer.php?u=<?= urlencode('http://localhost/newsportal/detail.php?id=' . $id) ?>"
+                   target="_blank">
                     <i class="bi bi-facebook" style="color:#1877f2;"></i> Facebook
                 </a>
             </div>
@@ -114,13 +147,13 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
                 </div>
                 <div class="row g-3">
                     <?php while ($t = mysqli_fetch_assoc($terkait)): ?>
-                    <div class="col-md-4">
+                    <div class="col-md-4 col-6">
                         <a href="/newsportal/detail.php?id=<?= $t['id'] ?>" style="display:block; height:100%;">
                             <div class="news-card">
                                 <?php if ($t['thumbnail']): ?>
                                     <img class="card-img" src="/newsportal/uploads/<?= $t['thumbnail'] ?>"
                                          alt="<?= htmlspecialchars($t['judul']) ?>"
-                                         style="height:130px;">
+                                         style="height:130px;" loading="lazy">
                                 <?php else: ?>
                                     <div class="card-img-placeholder" style="height:130px;"><i class="bi bi-image"></i></div>
                                 <?php endif; ?>
@@ -151,7 +184,6 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
             </div>
             <?php endif; ?>
 
-            <!-- Form Komentar -->
             <h4 class="comment-title">
                 <i class="bi bi-pencil-square me-2" style="color:var(--red);"></i>Tulis Komentar
             </h4>
@@ -180,7 +212,6 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
                 </form>
             </div>
 
-            <!-- Daftar Komentar -->
             <h5 class="comment-title" style="font-size:16px; margin-top:32px;">
                 <i class="bi bi-chat-dots me-2" style="color:var(--red);"></i>
                 Komentar Pembaca
@@ -195,14 +226,11 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
                 while ($k = mysqli_fetch_assoc($komentar)):
             ?>
             <div class="comment-item">
-                <div class="comment-avatar">
-                    <?= strtoupper(substr($k['nama'], 0, 1)) ?>
-                </div>
+                <div class="comment-avatar"><?= strtoupper(substr($k['nama'], 0, 1)) ?></div>
                 <div style="flex:1; min-width:0;">
                     <div class="comment-name"><?= htmlspecialchars($k['nama']) ?></div>
                     <div class="comment-date">
-                        <i class="bi bi-clock me-1"></i>
-                        <?= date('d F Y, H:i', strtotime($k['tanggal'])) ?>
+                        <i class="bi bi-clock me-1"></i><?= date('d F Y, H:i', strtotime($k['tanggal'])) ?>
                     </div>
                     <div class="comment-text"><?= nl2br(htmlspecialchars($k['komentar'])) ?></div>
                 </div>
@@ -233,15 +261,15 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
             </p>
         </div>
 
-        <!-- Artikel Terbaru -->
+        <!-- Artikel Terpopuler -->
         <div class="widget">
-            <div class="widget-title"><i class="bi bi-fire"></i> Artikel Terbaru</div>
+            <div class="widget-title"><i class="bi bi-graph-up-arrow"></i> Terpopuler</div>
             <?php while ($p = mysqli_fetch_assoc($art_populer)): ?>
             <a href="/newsportal/detail.php?id=<?= $p['id'] ?>">
                 <div class="list-card">
                     <?php if ($p['thumbnail']): ?>
                         <img src="/newsportal/uploads/<?= $p['thumbnail'] ?>"
-                             alt="<?= htmlspecialchars($p['judul']) ?>">
+                             alt="<?= htmlspecialchars($p['judul']) ?>" loading="lazy">
                     <?php else: ?>
                         <div style="width:75px;height:60px;background:var(--light-gray);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                             <i class="bi bi-image" style="color:#cbd5e1;"></i>
@@ -249,7 +277,9 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
                     <?php endif; ?>
                     <div>
                         <div class="list-title"><?= htmlspecialchars($p['judul']) ?></div>
-                        <div class="list-meta"><i class="bi bi-clock me-1"></i><?= date('d M Y', strtotime($p['tanggal'])) ?></div>
+                        <div class="list-meta">
+                            <i class="bi bi-eye me-1"></i><?= number_format($p['views'] ?? 0) ?> views
+                        </div>
                     </div>
                 </div>
             </a>
@@ -281,15 +311,15 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
 <?php include "includes/footer.php"; ?>
 
 <script>
-// Reading Progress Bar
 window.addEventListener('scroll', function () {
-    const doc  = document.documentElement;
+    const doc     = document.documentElement;
     const scrolled = doc.scrollTop;
     const total    = doc.scrollHeight - doc.clientHeight;
-    document.getElementById('read-progress').style.width = (scrolled / total * 100) + '%';
+    if (total > 0) {
+        document.getElementById('read-progress').style.width = (scrolled / total * 100) + '%';
+    }
 });
 
-// Copy link
 function copyLink() {
     navigator.clipboard.writeText(window.location.href).then(function () {
         alert('Link berhasil disalin!');

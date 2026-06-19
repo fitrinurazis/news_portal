@@ -86,7 +86,7 @@ $semua_kategori = mysqli_query($koneksi, "SELECT * FROM kategori ORDER BY nama_k
                 <div class="small-card" style="border-radius:var(--radius);">
                     <?php if ($art['thumbnail']): ?>
                         <img class="small-img" src="/newsportal/uploads/<?= $art['thumbnail'] ?>"
-                             alt="<?= htmlspecialchars($art['judul']) ?>">
+                             alt="<?= htmlspecialchars($art['judul']) ?>" loading="lazy">
                     <?php else: ?>
                         <div class="small-img-placeholder">
                             <i class="bi bi-image" style="color:#cbd5e1; font-size:1.5rem;"></i>
@@ -203,7 +203,7 @@ $semua_kategori = mysqli_query($koneksi, "SELECT * FROM kategori ORDER BY nama_k
                 <div class="list-card">
                     <?php if ($p['thumbnail']): ?>
                         <img src="/newsportal/uploads/<?= $p['thumbnail'] ?>"
-                             alt="<?= htmlspecialchars($p['judul']) ?>">
+                             alt="<?= htmlspecialchars($p['judul']) ?>" loading="lazy">
                     <?php else: ?>
                         <div style="width:75px;height:60px;background:var(--light-gray);border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                             <i class="bi bi-image" style="color:#cbd5e1;"></i>

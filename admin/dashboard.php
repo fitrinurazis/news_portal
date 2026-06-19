@@ -1,7 +1,6 @@
 <?php
 include "header.php";
 
-// Hanya ketua yang boleh akses
 if ($_SESSION['role'] != 'ketua') {
     header("Location: /newsportal/admin/index.php");
     exit;
@@ -9,116 +8,253 @@ if ($_SESSION['role'] != 'ketua') {
 
 include "sidebar.php";
 
-// Hitung statistik
-$total_artikel  = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM artikel"))['total'] ?? 0;
-$total_kategori = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM kategori"))['total'] ?? 0;
-$total_user     = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM users"))['total'] ?? 0;
-$total_komentar = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS total FROM komentar"))['total'] ?? 0;
+// Statistik
+$total_artikel  = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS t FROM artikel"))['t'] ?? 0;
+$total_kategori = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS t FROM kategori"))['t'] ?? 0;
+$total_user     = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS t FROM users"))['t'] ?? 0;
+$total_komentar = mysqli_fetch_assoc(mysqli_query($koneksi, "SELECT COUNT(*) AS t FROM komentar"))['t'] ?? 0;
+
+// Cek apakah kolom views sudah ada (SHOW COLUMNS tidak throw exception)
+$has_views = false;
+$qc = mysqli_query($koneksi, "SHOW COLUMNS FROM artikel LIKE 'views'");
+if ($qc && mysqli_num_rows($qc) > 0) $has_views = true;
+
+// Total views
+$total_views = 0;
+if ($has_views) {
+    $q_views = mysqli_query($koneksi, "SELECT SUM(views) AS t FROM artikel");
+    if ($q_views) $total_views = mysqli_fetch_assoc($q_views)['t'] ?? 0;
+}
+
+// Artikel terbaru (views hanya di-select jika kolom ada)
+$views_sel = $has_views ? ', artikel.views' : '';
+$artikel_terbaru = mysqli_query($koneksi,
+    "SELECT artikel.id, artikel.judul, artikel.thumbnail, artikel.tanggal $views_sel,
+            kategori.nama_kategori, users.nama AS penulis
+     FROM artikel
+     LEFT JOIN kategori ON artikel.kategori_id = kategori.id
+     LEFT JOIN users ON artikel.user_id = users.id
+     ORDER BY artikel.id DESC LIMIT 6"
+);
+
+// Komentar terbaru
+$komentar_terbaru = mysqli_query($koneksi,
+    "SELECT komentar.*, artikel.judul AS judul_artikel
+     FROM komentar
+     LEFT JOIN artikel ON komentar.artikel_id = artikel.id
+     ORDER BY komentar.id DESC LIMIT 5"
+);
 ?>
 
-<div class="col-md-10 main-content">
+<div class="col-lg-10 main-content">
+    <!-- Top Bar -->
     <div class="top-bar d-flex justify-content-between align-items-center">
-        <h5 class="mb-0 fw-bold">
-            <i class="bi bi-shield-check me-2 text-warning"></i>Dashboard Ketua
-        </h5>
-        <a href="/newsportal/index.php" target="_blank" class="btn btn-sm btn-outline-secondary">
-            <i class="bi bi-eye me-1"></i>Lihat Website
-        </a>
+        <div>
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-shield-check me-2" style="color:#ffc107;"></i>Dashboard Ketua
+            </h5>
+            <small class="text-muted"><?= date('l, d F Y') ?></small>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/newsportal/admin/artikel/tambah.php" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-lg me-1"></i>Artikel Baru
+            </a>
+            <a href="/newsportal/index.php" target="_blank" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-box-arrow-up-right me-1"></i>Lihat Website
+            </a>
+        </div>
     </div>
 
     <div class="p-4">
-        <!-- Selamat Datang -->
-        <div class="alert alert-warning d-flex align-items-center mb-4">
-            <i class="bi bi-person-badge fs-4 me-3"></i>
+
+        <!-- Welcome Banner -->
+        <div style="background:linear-gradient(135deg,#212529,#343a40); border-radius:12px; padding:24px 28px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
             <div>
-                Selamat datang, <strong><?= $_SESSION['nama'] ?></strong>!
-                Anda memiliki akses penuh sebagai <strong>Ketua</strong>.
+                <div style="font-size:13px; color:#adb5bd; margin-bottom:4px;">Selamat datang kembali,</div>
+                <div style="font-size:20px; font-weight:800; color:#fff;">
+                    <?= htmlspecialchars($_SESSION['nama']) ?>
+                    <span style="background:#ffc107; color:#212529; font-size:11px; font-weight:700; padding:2px 10px; border-radius:20px; margin-left:8px; vertical-align:middle;">KETUA</span>
+                </div>
+                <div style="font-size:13px; color:#6c757d; margin-top:6px;">
+                    Anda memiliki akses penuh ke seluruh fitur admin panel.
+                </div>
+            </div>
+            <div style="font-size:40px; opacity:.15; color:#fff;">
+                <i class="bi bi-shield-shaded"></i>
             </div>
         </div>
 
-        <!-- Statistik Cards -->
-        <div class="row mb-4">
-            <div class="col-md-3 mb-3">
-                <div class="card bg-primary text-white shadow-sm h-100">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="fw-bold mb-0"><?= $total_artikel ?></h2>
-                            <p class="mb-0 small">Total Artikel</p>
+        <!-- Stat Cards -->
+        <div class="row g-3 mb-4">
+            <?php
+            $stats = [
+                ['icon'=>'bi-newspaper',  'color'=>'#0d6efd', 'bg'=>'rgba(13,110,253,.1)',  'value'=>$total_artikel,  'label'=>'Total Artikel',  'link'=>'/newsportal/admin/artikel/index.php',  'link_text'=>'Kelola Artikel'],
+                ['icon'=>'bi-tags',       'color'=>'#198754', 'bg'=>'rgba(25,135,84,.1)',   'value'=>$total_kategori, 'label'=>'Total Kategori', 'link'=>'/newsportal/admin/kategori/index.php', 'link_text'=>'Kelola Kategori'],
+                ['icon'=>'bi-people',     'color'=>'#ffc107', 'bg'=>'rgba(255,193,7,.1)',   'value'=>$total_user,     'label'=>'Total User',     'link'=>'/newsportal/admin/user.php',           'link_text'=>'Kelola User'],
+                ['icon'=>'bi-chat-dots',  'color'=>'#dc3545', 'bg'=>'rgba(220,53,69,.1)',   'value'=>$total_komentar, 'label'=>'Total Komentar', 'link'=>'',                                     'link_text'=>''],
+                ['icon'=>'bi-eye',        'color'=>'#6f42c1', 'bg'=>'rgba(111,66,193,.1)',  'value'=>number_format($total_views), 'label'=>'Total Views', 'link'=>'', 'link_text'=>''],
+            ];
+            foreach ($stats as $s):
+            ?>
+            <div class="col-xl-2 col-lg-4 col-md-4 col-6">
+                <div style="background:#fff; border-radius:10px; padding:18px; box-shadow:0 1px 6px rgba(0,0,0,.07); border-left:4px solid <?= $s['color'] ?>; height:100%;">
+                    <div style="display:flex; align-items:flex-start; gap:12px;">
+                        <div style="width:44px; height:44px; border-radius:10px; background:<?= $s['bg'] ?>; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                            <i class="bi <?= $s['icon'] ?>" style="font-size:18px; color:<?= $s['color'] ?>;"></i>
                         </div>
-                        <i class="bi bi-newspaper fs-1 opacity-50"></i>
-                    </div>
-                    <div class="card-footer bg-transparent border-0 pt-0">
-                        <a href="/newsportal/admin/artikel/index.php" class="text-white-50 small text-decoration-none">
-                            Kelola Artikel <i class="bi bi-arrow-right"></i>
-                        </a>
+                        <div style="min-width:0;">
+                            <div style="font-size:22px; font-weight:800; color:#212529; line-height:1;"><?= $s['value'] ?></div>
+                            <div style="font-size:11.5px; color:#6c757d; margin-top:3px;"><?= $s['label'] ?></div>
+                            <?php if ($s['link']): ?>
+                            <a href="<?= $s['link'] ?>" style="font-size:11px; color:<?= $s['color'] ?>; margin-top:6px; display:block;">
+                                <?= $s['link_text'] ?> →
+                            </a>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 mb-3">
-                <div class="card bg-success text-white shadow-sm h-100">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="fw-bold mb-0"><?= $total_kategori ?></h2>
-                            <p class="mb-0 small">Total Kategori</p>
+            <?php endforeach; ?>
+        </div>
+
+        <div class="row g-4">
+            <!-- Artikel Terbaru -->
+            <div class="col-lg-8">
+                <div style="background:#fff; border-radius:10px; box-shadow:0 1px 6px rgba(0,0,0,.07); overflow:hidden;">
+                    <div style="padding:16px 20px; border-bottom:1px solid #dee2e6; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:700; font-size:14px;">
+                            <i class="bi bi-newspaper me-2 text-primary"></i>Artikel Terbaru
                         </div>
-                        <i class="bi bi-tags fs-1 opacity-50"></i>
+                        <a href="/newsportal/admin/artikel/index.php" style="font-size:12px; color:#0d6efd;">Lihat semua →</a>
                     </div>
-                    <div class="card-footer bg-transparent border-0 pt-0">
-                        <a href="/newsportal/admin/kategori/index.php" class="text-white-50 small text-decoration-none">
-                            Kelola Kategori <i class="bi bi-arrow-right"></i>
-                        </a>
+                    <div style="overflow-x:auto;">
+                        <table class="table table-hover mb-0" style="font-size:13px;">
+                            <thead style="background:#f8f9fa;">
+                                <tr>
+                                    <th style="padding:10px 16px; font-size:11.5px; color:#6c757d; font-weight:600; border:0;">ARTIKEL</th>
+                                    <th style="padding:10px 16px; font-size:11.5px; color:#6c757d; font-weight:600; border:0;">KATEGORI</th>
+                                    <th style="padding:10px 16px; font-size:11.5px; color:#6c757d; font-weight:600; border:0;">TANGGAL</th>
+                                    <th style="padding:10px 16px; font-size:11.5px; color:#6c757d; font-weight:600; border:0;">VIEWS</th>
+                                    <th style="padding:10px 16px; font-size:11.5px; color:#6c757d; font-weight:600; border:0;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php if (mysqli_num_rows($artikel_terbaru) > 0):
+                                while ($a = mysqli_fetch_assoc($artikel_terbaru)): ?>
+                                <tr>
+                                    <td style="padding:10px 16px; vertical-align:middle;">
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <?php if ($a['thumbnail']): ?>
+                                                <img src="/newsportal/uploads/<?= $a['thumbnail'] ?>"
+                                                     style="width:38px;height:32px;object-fit:cover;border-radius:5px;flex-shrink:0;" loading="lazy">
+                                            <?php else: ?>
+                                                <div style="width:38px;height:32px;background:#f8f9fa;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                                    <i class="bi bi-image" style="color:#ced4da;font-size:12px;"></i>
+                                                </div>
+                                            <?php endif; ?>
+                                            <div style="font-weight:600; color:#212529; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                                <?= htmlspecialchars($a['judul']) ?>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="padding:10px 16px; vertical-align:middle;">
+                                        <span style="background:#e9ecef; color:#495057; font-size:11px; font-weight:600; padding:2px 8px; border-radius:4px;">
+                                            <?= htmlspecialchars($a['nama_kategori'] ?? '-') ?>
+                                        </span>
+                                    </td>
+                                    <td style="padding:10px 16px; vertical-align:middle; color:#6c757d; white-space:nowrap;">
+                                        <?= date('d M Y', strtotime($a['tanggal'])) ?>
+                                    </td>
+                                    <td style="padding:10px 16px; vertical-align:middle; color:#6c757d;">
+                                        <i class="bi bi-eye me-1"></i><?= number_format($a['views'] ?? 0) ?>
+                                    </td>
+                                    <td style="padding:10px 16px; vertical-align:middle;">
+                                        <div class="d-flex gap-1">
+                                            <a href="/newsportal/detail.php?id=<?= $a['id'] ?>" target="_blank"
+                                               class="btn btn-sm btn-outline-secondary" style="padding:2px 7px;" title="Lihat">
+                                                <i class="bi bi-eye" style="font-size:11px;"></i>
+                                            </a>
+                                            <a href="/newsportal/admin/artikel/edit.php?id=<?= $a['id'] ?>"
+                                               class="btn btn-sm btn-outline-warning" style="padding:2px 7px;" title="Edit">
+                                                <i class="bi bi-pencil" style="font-size:11px;"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endwhile;
+                            else: ?>
+                                <tr><td colspan="5" class="text-center text-muted py-4">Belum ada artikel.</td></tr>
+                            <?php endif; ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 mb-3">
-                <div class="card bg-warning text-dark shadow-sm h-100">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="fw-bold mb-0"><?= $total_user ?></h2>
-                            <p class="mb-0 small">Total User</p>
-                        </div>
-                        <i class="bi bi-people fs-1 opacity-50"></i>
+
+            <!-- Panel Kanan: Komentar + Aksi Cepat -->
+            <div class="col-lg-4">
+
+                <!-- Aksi Cepat -->
+                <div style="background:#fff; border-radius:10px; box-shadow:0 1px 6px rgba(0,0,0,.07); padding:20px; margin-bottom:20px;">
+                    <div style="font-weight:700; font-size:14px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #dee2e6;">
+                        <i class="bi bi-lightning-charge me-2 text-warning"></i>Aksi Cepat
                     </div>
-                    <div class="card-footer bg-transparent border-0 pt-0">
-                        <a href="/newsportal/admin/user.php" class="text-dark-50 small text-decoration-none">
-                            Kelola User <i class="bi bi-arrow-right"></i>
+                    <div style="display:grid; gap:8px;">
+                        <a href="/newsportal/admin/artikel/tambah.php"
+                           style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; background:#e7f1ff; color:#0d6efd; font-size:13px; font-weight:600; text-decoration:none;">
+                            <i class="bi bi-plus-circle fs-5"></i> Tambah Artikel
+                        </a>
+                        <a href="/newsportal/admin/kategori/tambah.php"
+                           style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; background:#d1e7dd; color:#198754; font-size:13px; font-weight:600; text-decoration:none;">
+                            <i class="bi bi-folder-plus fs-5"></i> Tambah Kategori
+                        </a>
+                        <a href="/newsportal/admin/user.php"
+                           style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; background:#fff3cd; color:#856404; font-size:13px; font-weight:600; text-decoration:none;">
+                            <i class="bi bi-person-plus fs-5"></i> Kelola User
+                        </a>
+                        <a href="/newsportal/admin/artikel/index.php"
+                           style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; background:#f8f9fa; color:#495057; font-size:13px; font-weight:600; text-decoration:none;">
+                            <i class="bi bi-list-ul fs-5"></i> Semua Artikel
                         </a>
                     </div>
                 </div>
-            </div>
-            <div class="col-md-3 mb-3">
-                <div class="card bg-danger text-white shadow-sm h-100">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <h2 class="fw-bold mb-0"><?= $total_komentar ?></h2>
-                            <p class="mb-0 small">Total Komentar</p>
-                        </div>
-                        <i class="bi bi-chat-dots fs-1 opacity-50"></i>
+
+                <!-- Komentar Terbaru -->
+                <div style="background:#fff; border-radius:10px; box-shadow:0 1px 6px rgba(0,0,0,.07); padding:20px;">
+                    <div style="font-weight:700; font-size:14px; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #dee2e6;">
+                        <i class="bi bi-chat-dots me-2 text-danger"></i>Komentar Terbaru
                     </div>
+                    <?php if (mysqli_num_rows($komentar_terbaru) > 0):
+                        while ($k = mysqli_fetch_assoc($komentar_terbaru)): ?>
+                        <div style="display:flex; gap:10px; padding:10px 0; border-bottom:1px solid #f8f9fa;">
+                            <div style="width:34px; height:34px; border-radius:50%; background:#dc3545; color:#fff; font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <?= strtoupper(substr($k['nama'], 0, 1)) ?>
+                            </div>
+                            <div style="min-width:0; flex:1;">
+                                <div style="font-size:13px; font-weight:700; color:#212529;">
+                                    <?= htmlspecialchars($k['nama']) ?>
+                                </div>
+                                <div style="font-size:12px; color:#6c757d; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                    <?= htmlspecialchars(mb_strimwidth($k['komentar'], 0, 60, '...')) ?>
+                                </div>
+                                <div style="font-size:11px; color:#adb5bd; margin-top:3px;">
+                                    <i class="bi bi-newspaper me-1"></i>
+                                    <?= htmlspecialchars(mb_strimwidth($k['judul_artikel'] ?? '-', 0, 30, '...')) ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endwhile;
+                    else: ?>
+                        <div class="text-center text-muted py-3" style="font-size:13px;">
+                            <i class="bi bi-chat-square d-block mb-2" style="font-size:1.5rem; opacity:.3;"></i>
+                            Belum ada komentar.
+                        </div>
+                    <?php endif; ?>
                 </div>
+
             </div>
         </div>
 
-        <!-- Aksi Cepat -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white fw-bold">
-                <i class="bi bi-lightning-charge me-2"></i>Aksi Cepat
-            </div>
-            <div class="card-body">
-                <a href="/newsportal/admin/user.php" class="btn btn-outline-warning me-2 mb-2">
-                    <i class="bi bi-people me-1"></i>Kelola User
-                </a>
-                <a href="/newsportal/admin/kategori/tambah.php" class="btn btn-outline-success me-2 mb-2">
-                    <i class="bi bi-plus-circle me-1"></i>Tambah Kategori
-                </a>
-                <a href="/newsportal/admin/artikel/tambah.php" class="btn btn-outline-primary me-2 mb-2">
-                    <i class="bi bi-plus-circle me-1"></i>Tambah Artikel
-                </a>
-                <a href="/newsportal/admin/artikel/index.php" class="btn btn-outline-secondary me-2 mb-2">
-                    <i class="bi bi-list-ul me-1"></i>Semua Artikel
-                </a>
-            </div>
-        </div>
     </div>
 </div>
 
