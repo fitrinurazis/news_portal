@@ -50,38 +50,44 @@ while ($t = mysqli_fetch_assoc($ticker_berita)) $ticker_items[] = $t;
             <!-- Brand -->
             <a href="/newsportal/index.php" class="nav-brand">NEWS<span>PORTAL</span></a>
 
-            <!-- Nav Links (desktop) -->
+            <!-- Nav Links — desktop horizontal, mobile dropdown -->
             <ul class="nav-links" id="navLinks">
                 <li><a href="/newsportal/index.php">Home</a></li>
                 <li><a href="/newsportal/kategori.php">Kategori</a></li>
                 <li><a href="/newsportal/tentang.php">Tentang</a></li>
-                <!-- Search & Login tampil di dalam menu saat mobile -->
-                <li class="nav-mobile-search">
-                    <form action="/newsportal/kategori.php" method="GET">
-                        <div class="nav-search-form" style="border-radius:var(--radius-sm); width:100%;">
+                <!-- Item ini hanya muncul di dalam menu mobile -->
+                <li class="nav-mobile-only">
+                    <form action="/newsportal/kategori.php" method="GET" style="padding:10px 16px;">
+                        <div class="nav-search-form" style="border-radius:var(--radius-sm);">
                             <button type="submit"><i class="bi bi-search"></i></button>
                             <input type="text" name="keyword" placeholder="Cari berita..." style="width:100%;">
                         </div>
                     </form>
                 </li>
-                <li class="nav-mobile-login">
-                    <a href="/newsportal/auth/login.php" class="nav-login-btn" style="width:100%; justify-content:center;">
-                        <i class="bi bi-person-circle me-1"></i>Login
+                <li class="nav-mobile-only" style="padding:8px 16px 12px;">
+                    <a href="/newsportal/auth/login.php" class="nav-login-btn"
+                       style="display:flex; width:100%; justify-content:center;">
+                        <i class="bi bi-person-circle me-2"></i>Login
                     </a>
                 </li>
             </ul>
 
-            <!-- Kanan: Search + Login (desktop) + Hamburger (mobile) -->
+            <!-- Kanan: Search (lg+) + Login (md+) + Hamburger (mobile) -->
             <div class="nav-right">
-                <form class="nav-search-form nav-search-desktop" action="/newsportal/kategori.php" method="GET">
+                <!-- Search: muncul hanya di layar besar (≥992px) -->
+                <form class="nav-search-form d-none d-lg-flex" action="/newsportal/kategori.php" method="GET">
                     <button type="submit"><i class="bi bi-search"></i></button>
                     <input type="text" name="keyword" placeholder="Cari berita...">
                 </form>
-                <a href="/newsportal/auth/login.php" class="nav-login-btn nav-login-desktop">
+
+                <!-- Login: muncul di tablet & desktop (≥768px) -->
+                <a href="/newsportal/auth/login.php" class="nav-login-btn d-none d-md-inline-flex">
                     <i class="bi bi-person-circle me-1"></i>Login
                 </a>
-                <button class="nav-toggler" id="navToggler" aria-label="Toggle menu">
-                    <i class="bi bi-list fs-5" id="navTogglerIcon"></i>
+
+                <!-- Hamburger: muncul hanya di mobile (<768px) -->
+                <button class="nav-toggler d-flex d-md-none" id="navToggler" aria-label="Toggle menu">
+                    <i class="bi bi-list fs-4" id="navTogglerIcon"></i>
                 </button>
             </div>
 
@@ -96,14 +102,13 @@ const togglerIcon = document.getElementById('navTogglerIcon');
 
 toggler.addEventListener('click', function () {
     const isOpen = navLinks.classList.toggle('open');
-    togglerIcon.className = isOpen ? 'bi bi-x fs-5' : 'bi bi-list fs-5';
+    togglerIcon.className = isOpen ? 'bi bi-x fs-4' : 'bi bi-list fs-4';
 });
 
-// Tutup menu jika klik di luar
 document.addEventListener('click', function (e) {
     if (!navLinks.contains(e.target) && !toggler.contains(e.target)) {
         navLinks.classList.remove('open');
-        togglerIcon.className = 'bi bi-list fs-5';
+        togglerIcon.className = 'bi bi-list fs-4';
     }
 });
 </script>

@@ -181,21 +181,20 @@ img { max-width: 100%; display: block; }
     flex-shrink: 0;
 }
 
-/* Hidden on desktop — ditampilkan di dalam dropdown mobile */
-.nav-mobile-search,
-.nav-mobile-login { display: none; }
+/* Item khusus mobile di dalam menu dropdown (sembunyikan di desktop) */
+.nav-mobile-only { display: none; }
 
-/* Hamburger */
+/* Hamburger — show/hide via Bootstrap d-flex d-md-none di HTML */
 .nav-toggler {
-    display: none;
     background: none;
-    border: 1.5px solid var(--border);
+    border: 2px solid var(--dark);
     border-radius: var(--radius-sm);
-    padding: 6px 10px;
+    padding: 5px 10px;
     cursor: pointer;
     color: var(--dark);
     align-items: center;
     justify-content: center;
+    line-height: 1;
 }
 
 /* ============================================================
@@ -789,20 +788,15 @@ img { max-width: 100%; display: block; }
    RESPONSIVE — TABLET (≤ 991px)
 ============================================================ */
 @media (max-width: 991px) {
-    .nav-search-desktop { display: none; }
     .nav-links a { padding: 6px 10px; font-size: 13px; }
 }
 
 /* ============================================================
-   RESPONSIVE — MOBILE (≤ 768px)
+   RESPONSIVE — MOBILE (≤ 767px)
 ============================================================ */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
 
     /* ----- NAVBAR ----- */
-    .nav-toggler      { display: flex; }
-    .nav-login-desktop,
-    .nav-search-desktop { display: none; }
-
     /* Nav links: collapsed jadi dropdown */
     .nav-links {
         display: none;
@@ -831,21 +825,8 @@ img { max-width: 100%; display: block; }
     }
     .nav-links > li > a:hover { background: var(--light-gray); }
 
-    /* Tampilkan search + login di dalam menu mobile */
-    .nav-mobile-search,
-    .nav-mobile-login { display: block; padding: 12px 16px; }
-    .nav-mobile-search .nav-search-form {
-        border-radius: var(--radius-sm);
-        width: 100%;
-        padding: 8px 14px;
-    }
-    .nav-mobile-search .nav-search-form input { width: 100%; }
-    .nav-login-btn {
-        display: flex;
-        font-size: 14px;
-        width: 100%;
-        justify-content: center;
-    }
+    /* Tampilkan item mobile-only di dalam dropdown */
+    .nav-mobile-only { display: block; }
 
     /* ----- TOP BAR ----- */
     .top-date { display: none; }
@@ -875,6 +856,7 @@ img { max-width: 100%; display: block; }
         height: 160px !important;
     }
 
+    /* ----- ARTICLE DETAIL ----- */
     /* ----- ARTICLE DETAIL ----- */
     .article-card-pad { padding: 18px; }
     .article-title { font-size: 21px; }
