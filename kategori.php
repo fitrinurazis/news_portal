@@ -86,10 +86,9 @@ $semua_kategori = mysqli_query($koneksi, "SELECT * FROM kategori ORDER BY nama_k
                 <div class="small-card" style="border-radius:var(--radius);">
                     <?php if ($art['thumbnail']): ?>
                         <img class="small-img" src="/newsportal/uploads/<?= $art['thumbnail'] ?>"
-                             alt="<?= htmlspecialchars($art['judul']) ?>"
-                             style="width:160px; min-width:160px; height:120px;">
+                             alt="<?= htmlspecialchars($art['judul']) ?>">
                     <?php else: ?>
-                        <div class="small-img-placeholder" style="width:160px; min-width:160px; height:120px;">
+                        <div class="small-img-placeholder">
                             <i class="bi bi-image" style="color:#cbd5e1; font-size:1.5rem;"></i>
                         </div>
                     <?php endif; ?>

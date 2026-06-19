@@ -1,20 +1,24 @@
 <footer class="main-footer">
     <div class="container">
         <div class="row g-4">
-            <div class="col-md-4">
+
+            <!-- Brand -->
+            <div class="col-12 col-md-4">
                 <div class="footer-brand">NEWS<span>PORTAL</span></div>
                 <p class="footer-desc">
                     Portal berita digital terpercaya yang menyajikan informasi terkini,
                     akurat, dan berimbang untuk masyarakat Indonesia.
                 </p>
-                <div class="d-flex gap-3 mt-3">
-                    <a href="#" style="color:#94a3b8; font-size:18px; transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'"><i class="bi bi-facebook"></i></a>
-                    <a href="#" style="color:#94a3b8; font-size:18px; transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'"><i class="bi bi-instagram"></i></a>
-                    <a href="#" style="color:#94a3b8; font-size:18px; transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'"><i class="bi bi-twitter-x"></i></a>
-                    <a href="#" style="color:#94a3b8; font-size:18px; transition:color .2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'"><i class="bi bi-youtube"></i></a>
+                <div class="footer-socials">
+                    <a href="#"><i class="bi bi-facebook"></i></a>
+                    <a href="#"><i class="bi bi-instagram"></i></a>
+                    <a href="#"><i class="bi bi-twitter-x"></i></a>
+                    <a href="#"><i class="bi bi-youtube"></i></a>
                 </div>
             </div>
-            <div class="col-md-2">
+
+            <!-- Navigasi -->
+            <div class="col-6 col-sm-3 col-md-2">
                 <div class="footer-heading">Navigasi</div>
                 <ul class="footer-links">
                     <li><a href="/newsportal/index.php">Home</a></li>
@@ -23,7 +27,9 @@
                     <li><a href="/newsportal/auth/login.php">Login Admin</a></li>
                 </ul>
             </div>
-            <div class="col-md-3">
+
+            <!-- Kategori -->
+            <div class="col-6 col-sm-3 col-md-3">
                 <div class="footer-heading">Kategori</div>
                 <ul class="footer-links">
                     <?php
@@ -38,7 +44,9 @@
                     <?php endwhile; ?>
                 </ul>
             </div>
-            <div class="col-md-3">
+
+            <!-- Kontak -->
+            <div class="col-12 col-sm-6 col-md-3">
                 <div class="footer-heading">Kontak</div>
                 <ul class="footer-links">
                     <li><a href="#"><i class="bi bi-envelope me-2"></i>redaksi@newsportal.com</a></li>
@@ -46,8 +54,10 @@
                     <li><a href="#"><i class="bi bi-geo-alt me-2"></i>Jakarta, Indonesia</a></li>
                 </ul>
             </div>
+
         </div>
     </div>
+
     <div class="footer-bottom">
         <div class="container">
             &copy; <?= date('Y') ?> NewsPortal. Seluruh hak cipta dilindungi.

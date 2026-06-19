@@ -53,7 +53,7 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
 
     <!-- ====== KONTEN ARTIKEL ====== -->
     <div class="col-lg-8">
-        <div style="background:var(--white); border-radius:var(--radius); padding:32px; box-shadow:var(--shadow-sm);">
+        <div class="article-card-pad" style="background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow-sm);">
 
             <!-- Breadcrumb -->
             <ol class="breadcrumb">
@@ -142,7 +142,7 @@ $art_populer = mysqli_query($koneksi, "SELECT id, judul, thumbnail, tanggal FROM
         </div>
 
         <!-- ====== KOMENTAR ====== -->
-        <div class="comment-section" style="background:var(--white); border-radius:var(--radius); padding:32px; box-shadow:var(--shadow-sm); margin-top:24px;">
+        <div class="comment-section article-card-pad" style="background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow-sm); margin-top:24px;">
 
             <?php if (isset($_GET['komentar']) && $_GET['komentar'] == 'sukses'): ?>
             <div style="background:#f0fdf4; border:1.5px solid #86efac; color:#166534; padding:14px 18px; border-radius:var(--radius-sm); margin-bottom:24px; display:flex; align-items:center; gap:10px;">

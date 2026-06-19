@@ -166,6 +166,25 @@ img { max-width: 100%; display: block; }
 }
 .nav-login-btn:hover { background: var(--red-dark) !important; color: var(--white) !important; }
 
+/* Top bar inner layout */
+.top-bar-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Nav right group (search + login + hamburger) */
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+/* Hidden on desktop — ditampilkan di dalam dropdown mobile */
+.nav-mobile-search,
+.nav-mobile-login { display: none; }
+
 /* Hamburger */
 .nav-toggler {
     display: none;
@@ -175,6 +194,8 @@ img { max-width: 100%; display: block; }
     padding: 6px 10px;
     cursor: pointer;
     color: var(--dark);
+    align-items: center;
+    justify-content: center;
 }
 
 /* ============================================================
@@ -351,13 +372,17 @@ img { max-width: 100%; display: block; }
 }
 .small-card:hover { box-shadow: var(--shadow); }
 .small-card .small-img {
-    width: 110px;
-    min-width: 110px;
+    width: 150px;
+    min-width: 150px;
+    height: 120px;
     object-fit: cover;
+    flex-shrink: 0;
 }
 .small-card .small-img-placeholder {
-    width: 110px;
-    min-width: 110px;
+    width: 150px;
+    min-width: 150px;
+    height: 120px;
+    flex-shrink: 0;
     background: var(--light-gray);
     display: flex;
     align-items: center;
@@ -464,6 +489,7 @@ img { max-width: 100%; display: block; }
 /* ============================================================
    ARTICLE DETAIL
 ============================================================ */
+.article-card-pad { padding: 32px; }
 .article-header { margin-bottom: 24px; }
 .article-title {
     font-size: 28px;
@@ -650,6 +676,28 @@ img { max-width: 100%; display: block; }
 .footer-links li { margin-bottom: 9px; }
 .footer-links a { font-size: 13.5px; color: #94a3b8; transition: color .2s; }
 .footer-links a:hover { color: var(--white); }
+.footer-socials {
+    display: flex;
+    gap: 14px;
+    margin-top: 16px;
+}
+.footer-socials a {
+    color: #94a3b8;
+    font-size: 18px;
+    transition: color .2s, transform .2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid #1e293b;
+}
+.footer-socials a:hover {
+    color: var(--white);
+    border-color: var(--white);
+    transform: translateY(-2px);
+}
 .footer-bottom {
     border-top: 1px solid #1e293b;
     margin-top: 40px;
@@ -738,15 +786,159 @@ img { max-width: 100%; display: block; }
 .mt-section { margin-top: 40px; }
 
 /* ============================================================
-   RESPONSIVE
+   RESPONSIVE — TABLET (≤ 991px)
+============================================================ */
+@media (max-width: 991px) {
+    .nav-search-desktop { display: none; }
+    .nav-links a { padding: 6px 10px; font-size: 13px; }
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE (≤ 768px)
 ============================================================ */
 @media (max-width: 768px) {
-    .nav-links, .nav-search-form { display: none; }
-    .nav-toggler { display: block; }
-    .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; background: var(--white); padding: 16px; border-top: 1px solid var(--border); box-shadow: var(--shadow); z-index: 999; }
-    .hero-card { height: 280px; }
-    .hero-card .hero-title { font-size: 16px; }
-    .article-title { font-size: 22px; }
-    .top-bar .d-flex { flex-direction: column; gap: 4px; text-align: center; }
-    .ticker-items { animation-duration: 18s; }
+
+    /* ----- NAVBAR ----- */
+    .nav-toggler      { display: flex; }
+    .nav-login-desktop,
+    .nav-search-desktop { display: none; }
+
+    /* Nav links: collapsed jadi dropdown */
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--white);
+        flex-direction: column;
+        align-items: stretch;
+        padding: 4px 0 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.12);
+        border-top: 3px solid var(--red);
+        z-index: 999;
+        gap: 0;
+    }
+    .nav-links.open { display: flex; }
+    .nav-links > li { border-bottom: 1px solid var(--border); }
+    .nav-links > li:last-child { border-bottom: none; }
+    .nav-links > li > a {
+        display: block;
+        padding: 13px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 0;
+    }
+    .nav-links > li > a:hover { background: var(--light-gray); }
+
+    /* Tampilkan search + login di dalam menu mobile */
+    .nav-mobile-search,
+    .nav-mobile-login { display: block; padding: 12px 16px; }
+    .nav-mobile-search .nav-search-form {
+        border-radius: var(--radius-sm);
+        width: 100%;
+        padding: 8px 14px;
+    }
+    .nav-mobile-search .nav-search-form input { width: 100%; }
+    .nav-login-btn {
+        display: flex;
+        font-size: 14px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* ----- TOP BAR ----- */
+    .top-date { display: none; }
+    .top-bar { padding: 6px 0; }
+    .top-bar-inner { justify-content: center; }
+
+    /* ----- BREAKING NEWS ----- */
+    .breaking-bar .container { gap: 10px; }
+    .breaking-label { font-size: 10px; padding: 3px 8px; }
+    .ticker-items { font-size: 12px; animation-duration: 22s; }
+
+    /* ----- HERO ----- */
+    .hero-card { height: 240px; }
+    .hero-card .hero-overlay { padding: 16px; }
+    .hero-card .hero-title { font-size: 15px; -webkit-line-clamp: 3; }
+
+    /* ----- CARDS ----- */
+    .news-card .card-img,
+    .news-card .card-img-placeholder { height: 165px; }
+
+    /* Small card: horizontal → vertical */
+    .small-card { flex-direction: column; }
+    .small-card .small-img,
+    .small-card .small-img-placeholder {
+        width: 100% !important;
+        min-width: 100% !important;
+        height: 160px !important;
+    }
+
+    /* ----- ARTICLE DETAIL ----- */
+    .article-card-pad { padding: 18px; }
+    .article-title { font-size: 21px; }
+    .article-thumbnail { max-height: 230px; }
+    .article-meta { gap: 10px; font-size: 12px; }
+    .article-content { font-size: 15px; line-height: 1.8; }
+
+    /* ----- SHARE BAR ----- */
+    .share-bar { flex-wrap: wrap; gap: 8px; }
+    .share-label { width: 100%; margin-bottom: 2px; }
+    .share-btn { font-size: 12px; padding: 6px 12px; }
+
+    /* ----- KOMENTAR ----- */
+    .comment-form-card { padding: 16px !important; }
+    .comment-item { gap: 10px; padding: 14px; }
+    .comment-avatar { width: 36px; height: 36px; font-size: 13px; }
+
+    /* ----- SECTION ----- */
+    .section-title { font-size: 15px; }
+    .section-header { margin-bottom: 14px; }
+    .mt-section { margin-top: 28px; }
+
+    /* ----- FOOTER ----- */
+    .main-footer { padding-top: 36px; }
+    .footer-brand { font-size: 20px; }
+    .footer-desc { font-size: 13px; margin-bottom: 14px; }
+    .footer-heading { margin-top: 4px; }
+    .footer-bottom { margin-top: 28px; }
+    .footer-socials { gap: 10px; }
+    .footer-socials a { width: 32px; height: 32px; font-size: 15px; }
+}
+
+/* ============================================================
+   RESPONSIVE — SMALL MOBILE (≤ 480px)
+============================================================ */
+@media (max-width: 480px) {
+
+    /* Sembunyikan top bar sepenuhnya */
+    .top-bar { display: none; }
+
+    /* Navbar */
+    .nav-brand { font-size: 18px; }
+    .navbar-inner { padding: 10px 0; }
+
+    /* Hero lebih kecil */
+    .hero-card { height: 200px; }
+    .hero-card .hero-title { font-size: 13px; -webkit-line-clamp: 2; }
+
+    /* Cards */
+    .news-card .card-img,
+    .news-card .card-img-placeholder { height: 150px; }
+    .news-card .card-title { font-size: 13px; }
+    .news-card .card-excerpt { display: none; }
+
+    /* Article */
+    .article-title { font-size: 18px; }
+    .breadcrumb { font-size: 11px; }
+
+    /* Share */
+    .share-btn { padding: 5px 10px; font-size: 11px; }
+
+    /* Pagination */
+    .page-btn { width: 34px; height: 34px; font-size: 12px; }
+
+    /* Footer */
+    .footer-bottom { font-size: 12px; }
 }
